@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard KPI Q3/2026 — FB & Store</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--blue:#1F4E79;--sub:#4472C4;--green:#2e9e5b;--yellow:#e6a817;--red:#d64545;--bg:#f4f6fa;--card:#fff;--txt:#243040;--muted:#7a8699;--line:#e3e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);padding:18px;max-width:1220px;margin:0 auto}
+h1{font-size:21px;color:var(--blue);margin-bottom:4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.setup{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px}
+.setup h3{color:var(--blue);font-size:15px;margin-bottom:8px}
+.setup ol{margin:8px 0 12px 20px;font-size:13px;color:var(--txt)}
+.setup li{margin-bottom:4px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row input{flex:1;min-width:260px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.btn{padding:9px 20px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer;font-size:13px}
+.btn.gray{background:#8a94a6}
+#drop{border:2px dashed var(--sub);border-radius:10px;padding:18px;text-align:center;cursor:pointer;margin-top:10px;font-size:13px;color:var(--muted)}
+#drop.hover{background:#eef3fb}
+.statusbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted);margin-bottom:10px}
+.statusbar .live{color:var(--green);font-weight:700}
+.statusbar a{color:var(--sub);cursor:pointer;text-decoration:underline}
+.tabs{display:flex;gap:8px;margin:10px 0 16px}
+.tab{padding:8px 22px;border-radius:20px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600;font-size:14px}
+.tab.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:16px}
+.card{background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+.card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.card .val{font-size:18px;font-weight:700;margin-top:3px}
+.card .note{font-size:11px;color:var(--muted);margin-top:2px}
+.team{background:var(--card);border-radius:12px;border:1px solid var(--line);margin-bottom:14px;overflow:hidden}
+.thead{padding:10px 16px;font-weight:700;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.thead .l{font-size:15px}.thead .r{font-size:13px;font-weight:600;opacity:.95}
+.emp{display:grid;grid-template-columns:165px 1fr 250px;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
+.emp.leader{background:#f0f6ff}
+.emp .name{font-weight:600;font-size:14px}.emp .role{font-size:11px;color:var(--muted)}
+.barwrap{position:relative;height:22px;background:#edf0f5;border-radius:11px;overflow:hidden}
+.bar{height:100%;border-radius:11px;transition:width .4s}
+.mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:#333;opacity:.55}
+.bartxt{position:absolute;left:10px;top:0;line-height:22px;font-size:11.5px;font-weight:700;color:#243040}
+.meta{font-size:11.5px;text-align:right}
+.meta .pace{font-weight:700;font-size:13px}
+.chips{margin-top:2px}
+.chip{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:9px;margin-left:4px;background:#eef1f6;color:var(--muted)}
+.chip.ok{background:#e3f5ea;color:var(--green)}
+.chip.bad{background:#fdeaea;color:var(--red)}
+.section{background:var(--card);border-radius:12px;border:1px solid var(--line);padding:16px;margin-bottom:14px}
+.section h2{font-size:15px;color:var(--blue);margin-bottom:10px}
+table.lb{width:100%;border-collapse:collapse;font-size:13px}
+table.lb th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.lb td{padding:7px 8px;border-bottom:1px solid var(--line)}
+table.lb tr:last-child td{border-bottom:none}
+.hide{display:none}
+@media(max-width:760px){.emp{grid-template-columns:1fr;gap:6px}.meta{text-align:left}}
+</style>
+</head>
+<body>
+<h1>📊 Dashboard KPI Q3/2026 — Facebook & Store</h1>
+<div class="sub">Theo dõi tiến độ bám mục tiêu của từng nhân viên theo thời gian thực.</div>
+
+<div class="setup" id="setup">
+  <h3>🔗 Cách 1 — Kết nối Google Sheets (online, tự cập nhật)</h3>
+  <ol>
+    <li>Tải file <b>PHÂN BỔ KPI THÁNG Q3 - FB &amp; STORE.xlsx</b> lên Google Drive → mở bằng <b>Google Sheets</b> (File → Save as Google Sheets). Mọi người điền báo cáo trực tiếp trên đó.</li>
+    <li>Bấm <b>Share</b> → chọn <b>Anyone with the link — Viewer</b>.</li>
+    <li>Dán link Google Sheets vào ô dưới → <b>Kết nối</b>. Dashboard sẽ tự làm mới mỗi 5 phút.</li>
+  </ol>
+  <div class="row">
+    <input id="gsurl" placeholder="Dán link Google Sheets, ví dụ: https://docs.google.com/spreadsheets/d/ABC123.../edit">
+    <button class="btn" onclick="connectGS()">Kết nối</button>
+  </div>
+  <h3 style="margin-top:16px">📁 Cách 2 — Mở file Excel trên máy (offline)</h3>
+  <div id="drop">Kéo thả file .xlsx vào đây hoặc bấm để chọn<input type="file" id="fi" accept=".xlsx,.xlsm" style="display:none"></div>
+</div>
+
+<div id="app" class="hide">
+  <div class="statusbar">
+    <span id="src"></span>
+    <span><span id="upd"></span> · <a onclick="refresh()">↻ Làm mới ngay</a> · <a onclick="resetSrc()">Đổi nguồn dữ liệu</a></span>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="cards" id="cards"></div>
+  <div id="teams"></div>
+  <div class="section"><h2>📈 Lũy kế doanh thu toàn kênh vs nhịp target</h2><canvas id="chart" height="90"></canvas></div>
+  <div class="section"><h2>🏆 Bảng xếp hạng nhân viên (theo % hoàn thành tổng)</h2><table class="lb"><thead><tr><th>#</th><th>Nhân viên</th><th>Team</th><th>Thực tổng</th><th>Target tổng</th><th>%HT</th><th>%HT O3</th><th>Pace</th><th>Trạng thái</th></tr></thead><tbody id="lb"></tbody></table></div>
+</div>
+
+<script>
+const TEAM_COLORS={'619 NDC':'#4472C4','02 PH':'#548235','88 NGT':'#C55A11'};
+const MONTHS=[7,8,9], YEAR=2026, SHEETS=['PHÂN BỔ KPI','CHI TIẾT T7','CHI TIẾT T8','CHI TIẾT T9'];
+let DATA=null, curM=null, chart=null, gsId=null, timer=null;
+
+const fmt=n=>n==null||isNaN(n)?'–':Math.round(n).toLocaleString('vi-VN');
+const fmtM=n=>n>=1e6?(n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:1})+' tr':fmt(n);
+const pctf=x=>x==null||!isFinite(x)?'–':(x*100).toFixed(1)+'%';
+
+/* ---------- nguồn dữ liệu ---------- */
+const drop=document.getElementById('drop'), fi=document.getElementById('fi');
+drop.onclick=()=>fi.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('hover')};
+drop.ondragleave=()=>drop.classList.remove('hover');
+fi.onchange=()=>{if(fi.files[0])loadFile(fi.files[0])};
+// nhận kéo-thả ở BẤT KỲ đâu trên trang (tránh trình duyệt tự mở file Excel)
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>{
+  e.preventDefault();drop.classList.remove('hover');
+  const f=e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(f)loadFile(f);
+});
+
+function loadFile(f){
+  if(!/\.(xlsx|xlsm)$/i.test(f.name)){alert('File "'+f.name+'" không phải Excel (.xlsx). Hãy kéo đúng file PHÂN BỔ KPI THÁNG Q3 - FB & STORE.xlsx');return}
+  if(typeof XLSX==='undefined'){alert('Thư viện đọc Excel chưa tải được — cần mở dashboard khi CÓ INTERNET (bằng Chrome/Edge), không mở trong app xem file của Zalo/Drive.');return}
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const grids={};
+      for(const s of SHEETS){ if(!wb.Sheets[s])throw new Error('Thiếu sheet "'+s+'" — có thể bạn đang dùng file bản cũ. Hãy dùng bản Excel mới nhất.'); grids[s]=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1}); }
+      start(grids,'📁 File: '+f.name,false);
+    }catch(err){alert('Không đọc được file: '+err.message)}
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+function connectGS(){
+  const v=document.getElementById('gsurl').value.trim();
+  const m=v.match(/\/d\/([a-zA-Z0-9_-]{20,})/)||v.match(/^([a-zA-Z0-9_-]{20,})$/);
+  if(!m){alert('Link chưa đúng. Dán link dạng https://docs.google.com/spreadsheets/d/.../edit');return}
+  gsId=m[1];
+  try{localStorage.setItem('kpi_gsid',gsId)}catch(e){}
+  fetchGS();
+}
+
+function gvizLoad(sheetName){
+  // Tải qua thẻ <script> (JSONP) — không bị chặn CORS như fetch
+  return new Promise((resolve,reject)=>{
+    let done=false;
+    const s=document.createElement('script');
+    const finish=(fn,val)=>{if(done)return;done=true;s.remove();fn(val)};
+    window.google={visualization:{Query:{setResponse:j=>{
+      if(j.status==='error')finish(reject,new Error(sheetName+': '+(j.errors&&j.errors[0]?j.errors[0].detailed_message:'lỗi dữ liệu')));
+      else finish(resolve,j.table.rows.map(r=>(r.c||[]).map(c=>c?c.v:null)));
+    }}}};
+    s.onerror=()=>finish(reject,new Error('Không truy cập được Google (mất mạng?)'));
+    s.src=`https://docs.google.com/spreadsheets/d/${gsId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(sheetName)}`;
+    document.body.appendChild(s);
+    setTimeout(()=>finish(reject,new Error('Sheet "'+sheetName+'" không phản hồi — thường do file CHƯA Share công khai, hoặc chưa chuyển sang định dạng Google Sheets')),15000);
+  });
+}
+
+async function fetchGS(){
+  try{
+    const grids={};
+    for(const s of SHEETS) grids[s]=await gvizLoad(s);
+    start(grids,'🔗 Google Sheets (tự làm mới 5 phút)',true);
+  }catch(err){
+    alert('KHÔNG KẾT NỐI ĐƯỢC GOOGLE SHEETS — kiểm tra đủ 3 điều:\n\n'
+      +'1. File trên Drive phải là GOOGLE SHEETS thật (mở file → File → Save as Google Sheets nếu cạnh tên file còn chữ .XLSX) và dùng link của file MỚI đó.\n'
+      +'2. Share → General access: "Anyone with the link" — Viewer.\n'
+      +'3. Máy đang có internet.\n\nChi tiết lỗi: '+err.message);
+  }
+}
+
+function start(grids,srcLabel,live){
+  DATA=parse(grids);
+  const now=new Date();
+  if(curM==null)curM=(now.getFullYear()===YEAR&&MONTHS.includes(now.getMonth()+1))?now.getMonth()+1:7;
+  document.getElementById('setup').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  document.getElementById('src').innerHTML=live?'<span class="live">● LIVE</span> '+srcLabel:srcLabel;
+  document.getElementById('upd').textContent='Cập nhật: '+now.toLocaleTimeString('vi-VN');
+  render();
+  if(live){clearInterval(timer);timer=setInterval(fetchGS,5*60*1000);}
+}
+function refresh(){ if(gsId)fetchGS(); else fi.click(); }
+function resetSrc(){ clearInterval(timer);gsId=null;try{localStorage.removeItem('kpi_gsid')}catch(e){};document.getElementById('setup').classList.remove('hide');document.getElementById('app').classList.add('hide'); }
+window.addEventListener('load',()=>{ try{const id=localStorage.getItem('kpi_gsid'); if(id){gsId=id;fetchGS();}}catch(e){} });
+
+/* ---------- parse ---------- */
+function parse(g){
+  const alloc=g['PHÂN BỔ KPI'];
+  let aovFB={},aovST={};
+  for(const r of alloc){ if(r&&r[0]==='AOV tối thiểu (đ/đơn)'){MONTHS.forEach((m,j)=>{aovFB[m]=r[1+j*2];aovST[m]=r[2+j*2]});break;} }
+  let hi=-1; alloc.forEach((r,i)=>{if(hi<0&&r&&r[0]==='Team'&&r[1]==='Nhân viên')hi=i});
+  if(hi<0)throw new Error('Không tìm thấy bảng phân bổ');
+  const people=[];
+  for(let i=hi+1;i<alloc.length;i++){
+    const r=alloc[i]; if(!r||(!r[0]&&!r[1]))break;
+    if(!r[1]||String(r[1]).startsWith('Kiểm tra'))continue;
+    const p={team:r[0],name:String(r[1]).trim(),role:String(r[2]||''),leader:String(r[2]||'').includes('Leader'),tgt:{}};
+    MONTHS.forEach((m,j)=>{p.tgt[m]={fb:+r[4+j*6]||0,st:+r[6+j*6]||0,o3:+r[8+j*6]||0}});
+    people.push(p);
+  }
+  const daily={};
+  for(const m of MONTHS){
+    const grid=g['CHI TIẾT T'+m];
+    const hdr=grid[2]||[]; const names=[];
+    for(let c=1;c<hdr.length;c+=5){ if(hdr[c]==null)continue; let n=String(hdr[c]); const cut=n.indexOf(' ('); if(cut>0)n=n.slice(0,cut); names.push({name:n.trim(),col:c}); }
+    const emp={}; names.forEach(x=>emp[x.name]={fb:0,donFB:0,st:0,donST:0,o3:0});
+    const cum=[]; let running=0;
+    for(let i=4;i<grid.length;i++){
+      const r=grid[i]; if(!r||r[0]==null)continue; if(String(r[0]).startsWith('TỔNG'))break;
+      let daySum=0;
+      for(const x of names){
+        const e=emp[x.name];
+        const fb=+r[x.col]||0,dF=+r[x.col+1]||0,st=+r[x.col+2]||0,dS=+r[x.col+3]||0,o3=+r[x.col+4]||0;
+        e.fb+=fb;e.donFB+=dF;e.st+=st;e.donST+=dS;e.o3+=o3;daySum+=fb+st;
+      }
+      running+=daySum; cum.push(running);
+    }
+    daily[m]={emp,cum};
+  }
+  return {people,daily,aovFB,aovST};
+}
+
+/* ---------- tính toán ---------- */
+function timeProgress(m){
+  const nd=new Date(YEAR,m,0).getDate();
+  const today=new Date(); today.setHours(0,0,0,0);
+  let el=Math.floor((today-new Date(YEAR,m-1,1))/864e5)+1;
+  el=Math.max(0,Math.min(el,nd));
+  return {tp:el/nd,elapsed:el,nd};
+}
+function calc(m){
+  const {tp,elapsed,nd}=timeProgress(m);
+  const D=DATA.daily[m].emp;
+  const rows=DATA.people.map(p=>{
+    let a;
+    if(p.leader){
+      a={fb:0,donFB:0,st:0,donST:0,o3:0};
+      DATA.people.filter(q=>q.team===p.team&&!q.leader).forEach(q=>{const e=D[q.name]||{};for(const k in a)a[k]+=e[k]||0});
+    }else a=D[p.name]||{fb:0,donFB:0,st:0,donST:0,o3:0};
+    const tgt=p.tgt[m], tot=tgt.fb+tgt.st, act=a.fb+a.st;
+    const pct=tot>0?act/tot:0, pace=tp>0?pct/tp:null;
+    return {...p,a,tgt,tot,act,pct,pace,
+      pctO3:tgt.o3>0?a.o3/tgt.o3:null,
+      aovFB:a.donFB>0?a.fb/a.donFB:null, aovST:a.donST>0?a.st/a.donST:null};
+  });
+  return {rows,tp,elapsed,nd};
+}
+const paceColor=p=>p==null?'#9aa5b5':p>=1?'var(--green)':p>=.85?'var(--yellow)':'var(--red)';
+const paceLabel=p=>p==null?'⏳ Chưa bắt đầu':p>=1?'✅ Đạt/Vượt':p>=.85?'🟡 Bám sát':'🔴 Chậm';
+
+/* ---------- render ---------- */
+function render(){
+  document.getElementById('tabs').innerHTML=MONTHS.map(m=>`<div class="tab ${m===curM?'on':''}" onclick="curM=${m};render()">Tháng ${m}</div>`).join('');
+  const {rows,tp,elapsed,nd}=calc(curM);
+  const leads=rows.filter(r=>r.leader);
+  const chTgt=leads.reduce((s,r)=>s+r.tot,0), chAct=leads.reduce((s,r)=>s+r.act,0);
+  const chTgtO3=leads.reduce((s,r)=>s+r.tgt.o3,0), chActO3=leads.reduce((s,r)=>s+r.a.o3,0);
+  const chPct=chTgt>0?chAct/chTgt:0, chPace=tp>0?chPct/tp:null;
+  document.getElementById('cards').innerHTML=`
+    <div class="card"><div class="lbl">Target tháng ${curM}</div><div class="val">${fmtM(chTgt)}</div><div class="note">FB + Store toàn kênh</div></div>
+    <div class="card"><div class="lbl">Thực đạt</div><div class="val">${fmtM(chAct)}</div><div class="note">${pctf(chPct)} target</div></div>
+    <div class="card"><div class="lbl">DT O3 (O2.KR3)</div><div class="val">${fmtM(chActO3)}</div><div class="note">${pctf(chTgtO3>0?chActO3/chTgtO3:null)} / target ${fmtM(chTgtO3)}</div></div>
+    <div class="card"><div class="lbl">Tiến độ thời gian</div><div class="val">${pctf(tp)}</div><div class="note">Ngày ${elapsed}/${nd}</div></div>
+    <div class="card"><div class="lbl">Pace toàn kênh</div><div class="val" style="color:${paceColor(chPace)}">${pctf(chPace)}</div><div class="note">${paceLabel(chPace)}</div></div>`;
+  const teamsDiv=document.getElementById('teams'); teamsDiv.innerHTML='';
+  for(const tn of [...new Set(rows.map(r=>r.team))]){
+    const lead=rows.find(r=>r.team===tn&&r.leader), mem=rows.filter(r=>r.team===tn&&!r.leader);
+    const div=document.createElement('div'); div.className='team';
+    div.innerHTML=`<div class="thead" style="background:${TEAM_COLORS[tn]||'var(--sub)'}">
+      <span class="l">${tn} — Leader: ${lead?lead.name:''}</span>
+      <span class="r">Team: ${fmtM(lead.act)} / ${fmtM(lead.tot)} · ${pctf(lead.pct)} · ${paceLabel(lead.pace)}</span></div>`
+      +[lead,...mem].map(r=>empRow(r,tp)).join('');
+    teamsDiv.appendChild(div);
+  }
+  renderChart(curM,chTgt);
+  const lb=rows.filter(r=>!r.leader).sort((a,b)=>b.pct-a.pct);
+  document.getElementById('lb').innerHTML=lb.map((r,i)=>`<tr>
+    <td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td><td><b>${r.name}</b></td><td>${r.team}</td>
+    <td>${fmt(r.act)}</td><td>${fmt(r.tot)}</td><td><b>${pctf(r.pct)}</b></td><td>${pctf(r.pctO3)}</td>
+    <td style="color:${paceColor(r.pace)};font-weight:700">${pctf(r.pace)}</td><td>${paceLabel(r.pace)}</td></tr>`).join('');
+}
+function empRow(r,tp){
+  const w=Math.min(r.pct*100,100), mk=Math.min(tp*100,100);
+  const aFB=DATA.aovFB[curM], aST=DATA.aovST[curM];
+  const chips=[
+    r.aovFB==null?`<span class="chip">AOV FB –</span>`:`<span class="chip ${r.aovFB>=aFB?'ok':'bad'}">AOV FB ${fmt(r.aovFB/1000)}K</span>`,
+    r.aovST==null?`<span class="chip">AOV St –</span>`:`<span class="chip ${r.aovST>=aST?'ok':'bad'}">AOV St ${fmt(r.aovST/1000)}K</span>`,
+    r.pctO3==null?`<span class="chip">O3 –</span>`:`<span class="chip ${r.pctO3>=tp?'ok':'bad'}">O3 ${pctf(r.pctO3)}</span>`
+  ].join('');
+  return `<div class="emp ${r.leader?'leader':''}">
+    <div><div class="name">${r.name}${r.leader?' 👑':''}</div><div class="role">${r.leader?'Leader — KPI cả team':(r.role||'Nhân viên')}</div></div>
+    <div class="barwrap"><div class="bar" style="width:${w}%;background:${paceColor(r.pace)}"></div><div class="mark" style="left:${mk}%"></div><div class="bartxt">${pctf(r.pct)} · ${fmtM(r.act)} / ${fmtM(r.tot)}</div></div>
+    <div class="meta"><span class="pace" style="color:${paceColor(r.pace)}">Pace ${pctf(r.pace)}</span> ${paceLabel(r.pace)}<div class="chips">${chips}</div></div>
+  </div>`;
+}
+function renderChart(m,chTgt){
+  const cum=DATA.daily[m].cum, nd=new Date(YEAR,m,0).getDate(), el=timeProgress(m).elapsed;
+  const labels=Array.from({length:nd},(_,i)=>(i+1)+'/'+m);
+  const actual=labels.map((_,i)=>(i<el&&i<cum.length)?cum[i]:null);
+  const target=labels.map((_,i)=>chTgt*(i+1)/nd);
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('chart'),{type:'line',data:{labels,datasets:[
+    {label:'Lũy kế thực tế',data:actual,borderColor:'#1F4E79',backgroundColor:'rgba(31,78,121,.08)',fill:true,tension:.25,spanGaps:false,pointRadius:2},
+    {label:'Nhịp target đều',data:target,borderColor:'#d64545',borderDash:[6,4],pointRadius:0}
+  ]},options:{plugins:{legend:{labels:{boxWidth:14}}},scales:{y:{ticks:{callback:v=>(v/1e6).toLocaleString('vi-VN')+' tr'}}},interaction:{mode:'index',intersect:false}}});
+}
+</script>
+</body>
+</html>
