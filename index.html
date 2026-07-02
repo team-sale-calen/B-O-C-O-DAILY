@@ -231,7 +231,7 @@ function parse(g){
 function timeProgress(m){
   const nd=new Date(YEAR,m,0).getDate();
   const today=new Date(); today.setHours(0,0,0,0);
-  let el=Math.floor((today-new Date(YEAR,m-1,1))/864e5)+1;
+  let el=Math.floor((today-new Date(YEAR,m-1,1))/864e5);   // chỉ tính ngày ĐÃ QUA, không tính hôm nay (khớp công thức D5 trên Sheets)
   el=Math.max(0,Math.min(el,nd));
   return {tp:el/nd,elapsed:el,nd};
 }
