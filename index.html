@@ -93,6 +93,8 @@ table.lb tr:last-child td{border-bottom:none}
 <script>
 const TEAM_COLORS={'619 NDC':'#4472C4','02 PH':'#548235','88 NGT':'#C55A11'};
 const MONTHS=[7,8,9], YEAR=2026, SHEETS=['PHÂN BỔ KPI','CHI TIẾT T7','CHI TIẾT T8','CHI TIẾT T9'];
+// ID Google Sheets mặc định — team mở link là kết nối luôn, không cần dán link
+const DEFAULT_GSID='10HLU7FCBXeLFXIFijON4fn1n9lbHWXGNDk5vaHUevdY';
 let DATA=null, curM=null, chart=null, gsId=null, timer=null;
 
 const fmt=n=>n==null||isNaN(n)?'–':Math.round(n).toLocaleString('vi-VN');
@@ -180,7 +182,13 @@ function start(grids,srcLabel,live){
 }
 function refresh(){ if(gsId)fetchGS(); else fi.click(); }
 function resetSrc(){ clearInterval(timer);gsId=null;try{localStorage.removeItem('kpi_gsid')}catch(e){};document.getElementById('setup').classList.remove('hide');document.getElementById('app').classList.add('hide'); }
-window.addEventListener('load',()=>{ try{const id=localStorage.getItem('kpi_gsid'); if(id){gsId=id;fetchGS();}}catch(e){} });
+window.addEventListener('load',()=>{
+  let id=null;
+  const h=location.hash.match(/id=([a-zA-Z0-9_-]{20,})/); if(h)id=h[1];       // ưu tiên link có #id=...
+  if(!id){try{id=localStorage.getItem('kpi_gsid')}catch(e){}}                  // rồi tới lần kết nối trước
+  if(!id)id=DEFAULT_GSID;                                                      // cuối cùng là ID gắn sẵn
+  if(id){gsId=id;fetchGS();}
+});
 
 /* ---------- parse ---------- */
 function parse(g){
