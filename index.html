@@ -97,6 +97,10 @@ const MONTHS=[7,8,9], YEAR=2026, SHEETS=['PHÂN BỔ KPI','CHI TIẾT T7','CHI T
 const DEFAULT_GSID='10HLU7FCBXeLFXIFijON4fn1n9lbHWXGNDk5vaHUevdY';
 let DATA=null, curM=null, chart=null, gsId=null, timer=null;
 
+// đổi mọi kiểu dữ liệu về số: 4501508 | "4.501.508" | "4,501,508" | " 4 501 508 đ" đều ra 4501508
+const num=v=>{if(typeof v==='number')return v;if(v==null||v==='')return 0;
+  const s=String(v).replace(/[^\d,.-]/g,'');const clean=s.replace(/[.,](?=\d{3}(\D|$))/g,'').replace(',','.');
+  const n=parseFloat(clean);return isNaN(n)?0:n};
 const fmt=n=>n==null||isNaN(n)?'–':Math.round(n).toLocaleString('vi-VN');
 const fmtM=n=>n>=1e6?(n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:1})+' tr':fmt(n);
 const pctf=x=>x==null||!isFinite(x)?'–':(x*100).toFixed(1)+'%';
@@ -150,7 +154,7 @@ function gvizLoad(sheetName){
       else finish(resolve,j.table.rows.map(r=>(r.c||[]).map(c=>c?c.v:null)));
     }}}};
     s.onerror=()=>finish(reject,new Error('Không truy cập được Google (mất mạng?)'));
-    s.src=`https://docs.google.com/spreadsheets/d/${gsId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(sheetName)}`;
+    s.src=`https://docs.google.com/spreadsheets/d/${gsId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(sheetName)}&cb=${Date.now()}`; // cb= chống Google trả cache cũ
     document.body.appendChild(s);
     setTimeout(()=>finish(reject,new Error('Sheet "'+sheetName+'" không phản hồi — thường do file CHƯA Share công khai, hoặc chưa chuyển sang định dạng Google Sheets')),15000);
   });
@@ -194,7 +198,7 @@ window.addEventListener('load',()=>{
 function parse(g){
   const alloc=g['PHÂN BỔ KPI'];
   let aovFB={},aovST={};
-  for(const r of alloc){ if(r&&r[0]==='AOV tối thiểu (đ/đơn)'){MONTHS.forEach((m,j)=>{aovFB[m]=r[1+j*2];aovST[m]=r[2+j*2]});break;} }
+  for(const r of alloc){ if(r&&r[0]==='AOV tối thiểu (đ/đơn)'){MONTHS.forEach((m,j)=>{aovFB[m]=num(r[1+j*2]);aovST[m]=num(r[2+j*2])});break;} }
   let hi=-1; alloc.forEach((r,i)=>{if(hi<0&&r&&r[0]==='Team'&&r[1]==='Nhân viên')hi=i});
   if(hi<0)throw new Error('Không tìm thấy bảng phân bổ');
   const people=[];
@@ -202,22 +206,24 @@ function parse(g){
     const r=alloc[i]; if(!r||(!r[0]&&!r[1]))break;
     if(!r[1]||String(r[1]).startsWith('Kiểm tra'))continue;
     const p={team:r[0],name:String(r[1]).trim(),role:String(r[2]||''),leader:String(r[2]||'').includes('Leader'),tgt:{}};
-    MONTHS.forEach((m,j)=>{p.tgt[m]={fb:+r[4+j*6]||0,st:+r[6+j*6]||0,o3:+r[8+j*6]||0}});
+    MONTHS.forEach((m,j)=>{p.tgt[m]={fb:num(r[4+j*6]),st:num(r[6+j*6]),o3:num(r[8+j*6])}});
     people.push(p);
   }
+  // Cột trong sheet CHI TIẾT gán theo THỨ TỰ nhân viên (không phụ thuộc dòng tên):
+  // nhân viên thứ i (không tính Leader) chiếm 5 cột bắt đầu từ cột 1+5i
+  const memNames=people.filter(p=>!p.leader).map(p=>p.name);
   const daily={};
   for(const m of MONTHS){
     const grid=g['CHI TIẾT T'+m];
-    const hdr=grid[2]||[]; const names=[];
-    for(let c=1;c<hdr.length;c+=5){ if(hdr[c]==null)continue; let n=String(hdr[c]); const cut=n.indexOf(' ('); if(cut>0)n=n.slice(0,cut); names.push({name:n.trim(),col:c}); }
-    const emp={}; names.forEach(x=>emp[x.name]={fb:0,donFB:0,st:0,donST:0,o3:0});
+    const emp={};
+    memNames.forEach((n,i)=>emp[n]={col:1+5*i,fb:0,donFB:0,st:0,donST:0,o3:0});
     const cum=[]; let running=0;
     for(let i=4;i<grid.length;i++){
       const r=grid[i]; if(!r||r[0]==null)continue; if(String(r[0]).startsWith('TỔNG'))break;
       let daySum=0;
-      for(const x of names){
-        const e=emp[x.name];
-        const fb=+r[x.col]||0,dF=+r[x.col+1]||0,st=+r[x.col+2]||0,dS=+r[x.col+3]||0,o3=+r[x.col+4]||0;
+      for(const n of memNames){
+        const e=emp[n], c=e.col;
+        const fb=num(r[c]),dF=num(r[c+1]),st=num(r[c+2]),dS=num(r[c+3]),o3=num(r[c+4]);
         e.fb+=fb;e.donFB+=dF;e.st+=st;e.donST+=dS;e.o3+=o3;daySum+=fb+st;
       }
       running+=daySum; cum.push(running);
